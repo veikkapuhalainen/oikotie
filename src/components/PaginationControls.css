@@ -1,0 +1,27 @@
+.page-change-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+  gap: 10px;
+}
+
+.page-button {
+  padding: 6px 14px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.page-button:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 1rem;
+  font-weight: 500;
+}

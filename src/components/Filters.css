@@ -1,0 +1,69 @@
+/* src/components/Filters.css */
+.filter-container {
+  padding: 16px;
+  border-radius: 10px;
+  background-color: #f4f6f8;
+  box-shadow: 0 8px 10px rgba(0, 0, 0, 0.06);
+  margin-bottom: 20px;
+}
+
+.filter-container-header {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.sort-selector,
+.price-selector {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  min-width: 180px;
+  background-color: #fff;
+}
+
+.room-selector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.room-nro {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.refresh-reset-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.refresh-btn,
+.reset-btn {
+  background-color: #d0d3db;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.refresh-btn:hover,
+.reset-btn:hover {
+  background-color: #b4b8c2;
+}

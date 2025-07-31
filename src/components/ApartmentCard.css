@@ -1,0 +1,83 @@
+/* src/components/ApartmentCard.css */
+
+.apartment-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #fdfdff;
+  text-decoration: none;
+  color: #202734;
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.apartment-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.apartment-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background-color: #eee;
+}
+
+.apartment-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.apartment-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.apartment-location {
+  font-size: 1rem;
+  color: #363434;
+}
+
+.apartment-description {
+  font-size: 0.95rem;
+  color: #2f2e2e;
+  line-height: 1.3;
+}
+
+.apartment-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #333;
+  margin-top: 4px;
+}
+
+.apartment-info span {
+  background-color: #f1f3f5;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.apartment-price {
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.apartment-price div {
+  font-size: 1.1rem;
+  font-weight: normal;
+  color: #333;
+}
+
+.apartment-visits {
+  font-size: 0.75rem;
+  color: #363535;
+  margin-top: 4px;
+}
