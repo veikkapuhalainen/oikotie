@@ -1,3 +1,9 @@
+.spinner-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .spinner {
   margin: 40px auto;
   width: 48px;

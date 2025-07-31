@@ -15,11 +15,21 @@ function App() {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [selectedRooms, setSelectedRooms] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [totalResults, setTotalResults] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch paged apartments from backend
+  // ✅ Refresh data only on full reload (e.g. F5)
+  useEffect(() => {
+    const fetchInitial = async () => {
+      setLoading(true);
+      await fetch('http://localhost:3001/api/refresh', { method: 'POST' });
+      setLoading(false);
+    };
+    fetchInitial();
+  }, []); // Run only once when the app loads
+
+  // ✅ Backend filtering + sorting + pagination
   useEffect(() => {
     const fetchApartments = async () => {
       setLoading(true);
@@ -30,6 +40,7 @@ function App() {
       params.append('sort', sortKey);
       params.append('order', sortOrder);
       params.append('page', currentPage);
+      params.append('pageSize', PAGE_SIZE);
 
       try {
         const res = await fetch(`http://localhost:3001/api/apartments?${params.toString()}`);
@@ -41,25 +52,23 @@ function App() {
         console.error('❌ Failed to fetch apartments:', err);
         setApartments([]);
       }
-
       setLoading(false);
     };
 
     fetchApartments();
   }, [minPrice, maxPrice, selectedRooms, sortKey, sortOrder, currentPage]);
 
-  // 👇 Reset to first page on filter/sort changes only
+   // 👇 Reset to first page on filter/sort changes only
   useEffect(() => {
     setCurrentPage(1);
   }, [minPrice, maxPrice, selectedRooms, sortKey, sortOrder]);
 
   const handleRefresh = async () => {
     setLoading(true);
-    await fetch('http://localhost:3001/api/apartments');
-    setCurrentPage(1);
+    await fetch('http://localhost:3001/api/refresh', { method: 'POST' });
+    setCurrentPage(1); // reset page
     setLoading(false);
   };
-
 
   return (
     <div className="p-4 bg-blue-50 min-h-screen">
