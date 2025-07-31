@@ -1,64 +1,73 @@
-// App.jsx
 import { useEffect, useState } from 'react';
-import apartmentsData from "./apartments.json"
 import ApartmentCard from './components/ApartmentCard';
 import Filters from './components/Filters';
 import PaginationControls from './components/PaginationControls';
+import Spinner from './components/Spinner';
 import './App.css';
-
 
 const PAGE_SIZE = 50;
 
 function App() {
-  const [apartments, setApartments] = useState(null);
+  const [apartments, setApartments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortKey, setSortKey] = useState('price');
   const [sortOrder, setSortOrder] = useState('asc');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [selectedRooms, setSelectedRooms] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [totalResults, setTotalResults] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
+  // Fetch paged apartments from backend
   useEffect(() => {
-    setApartments(apartmentsData);
-  }, []);
+    const fetchApartments = async () => {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (minPrice) params.append('minPrice', minPrice);
+      if (maxPrice) params.append('maxPrice', maxPrice);
+      if (selectedRooms.length > 0) params.append('rooms', selectedRooms.join(','));
+      params.append('sort', sortKey);
+      params.append('order', sortOrder);
+      params.append('page', currentPage);
+
+      try {
+        const res = await fetch(`http://localhost:3001/api/apartments?${params.toString()}`);
+        const data = await res.json();
+        setApartments(data.apartments);
+        setTotalResults(data.total);
+        setTotalPages(Math.ceil(data.total / PAGE_SIZE));
+      } catch (err) {
+        console.error('❌ Failed to fetch apartments:', err);
+        setApartments([]);
+      }
+
+      setLoading(false);
+    };
+
+    fetchApartments();
+  }, [minPrice, maxPrice, selectedRooms, sortKey, sortOrder, currentPage]);
+
+  // 👇 Reset to first page on filter/sort changes only
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [minPrice, maxPrice, selectedRooms, sortKey, sortOrder]);
 
   const handleRefresh = async () => {
-    const res = await fetch('http://localhost:3001/api/load-apartments', { method: 'POST' });
-    const json = await res.json();
-    if (json.success) {
-      const updated = await fetch('./apartments.json').then(res => res.json());
-      setApartments(updated);
-      setCurrentPage(1);
-    }
+    setLoading(true);
+    await fetch('http://localhost:3001/api/apartments');
+    setCurrentPage(1);
+    setLoading(false);
   };
 
-  if (!apartments) return <div className="p-4">Loading apartments...</div>;
-
-  const filtered = apartments.filter(apt => {
-    const price = parseFloat((apt.price || '').toString().replace(/[^\d.]/g, '')) || 0;
-    const rooms = apt.rooms || 0;
-    return (
-      (!minPrice || price >= minPrice) &&
-      (!maxPrice || price <= maxPrice) &&
-      (selectedRooms.length === 0 || selectedRooms.includes(rooms))
-    );
-  });
-
-  const sorted = [...filtered].sort((a, b) => {
-    const aVal = parseFloat((a[sortKey] || '').toString().replace(/[^\d.]/g, ''));
-    const bVal = parseFloat((b[sortKey] || '').toString().replace(/[^\d.]/g, ''));
-    return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
-  });
-
-  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const paged = sorted.slice(start, start + PAGE_SIZE);
 
   return (
     <div className="p-4 bg-blue-50 min-h-screen">
       <header className="app-header">
         <h1 className="app-title">🏠 Oikotie-Haku</h1>
-        <div className="results-count"><span>{sorted.length}</span> asuntoa löydetty✅</div>
+        <div className="results-count">
+          <span>{totalResults}</span> asuntoa haettu✅
+        </div>
       </header>
 
       <Filters
@@ -75,19 +84,23 @@ function App() {
         handleRefresh={handleRefresh}
       />
 
-      <PaginationControls 
+      <PaginationControls
         setPage={setCurrentPage}
         currentPage={currentPage}
         totalPages={totalPages}
       />
 
-      <div className="apartment-grid responsive-grid">
-        {paged.map((apt, i) => (
-          <ApartmentCard key={i} apartment={apt} />
-        ))}
-      </div>
+      {loading ? (
+        <Spinner />
+      ) : (
+        <div className="apartment-grid responsive-grid">
+          {apartments.map((apt, i) => (
+            <ApartmentCard key={i} apartment={apt} />
+          ))}
+        </div>
+      )}
 
-      <PaginationControls 
+      <PaginationControls
         setPage={setCurrentPage}
         currentPage={currentPage}
         totalPages={totalPages}

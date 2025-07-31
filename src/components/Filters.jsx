@@ -12,24 +12,42 @@ export default function Filters({
   setMaxPrice,
   selectedRooms,
   setSelectedRooms,
-  handleRefresh
+  handleRefresh,
 }) {
   return (
     <div className="filter-container">
       <div className="filter-container-header">⚙️ Suodata & Järjestä</div>
       <div className="filters">
-        <select value={sortKey} onChange={e => setSortKey(e.target.value)} className="sort-selector">
-          <option value="price">Hinta: Pieni-Suuri</option>
-          <option value="pricePerSqm">Neliöhinta</option>
-          <option value="size">Koko</option>
-          <option value="rooms">Huoneita</option>
-          <option value="year">Vuosi</option>
-          <option value="visits">Käyntejä</option>
+        <select
+          value={`${sortKey}_${sortOrder}`}
+          onChange={e => {
+            const [key, order] = e.target.value.split('_');
+            setSortKey(key);
+            setSortOrder(order);
+          }}
+          className="sort-selector"
+        >
+          <option value="price_asc">Hinta: Pieni-Suuri</option>
+          <option value="price_desc">Hinta: Suuri-Pieni</option>
+          <option value="pricePerSqm_asc">Neliöhinta: Pieni-Suuri</option>
+          <option value="pricePerSqm_desc">Neliöhinta: Suuri-Pieni</option>
+          <option value="size_asc">Koko: Pieni-Suuri</option>
+          <option value="size_desc">Koko: Suuri-Pieni</option>
+          <option value="rooms_asc">Huoneita: Vähän-Enemmän</option>
+          <option value="rooms_desc">Huoneita: Enemmän-Vähemmän</option>
+          <option value="year_asc">Vuosi: Vanhin-Uusin</option>
+          <option value="year_desc">Vuosi: Uusin-Vanhin</option>
+          <option value="visits_asc">Käyntejä: Vähän-Paljon</option>
+          <option value="visits_desc">Käyntejä: Paljon-Vähän</option>
         </select>
+
+
         <input type="number" placeholder="Min Hinta (€)" value={minPrice} onChange={e => setMinPrice(e.target.value)} className="price-selector" />
         <input type="number" placeholder="Max Hinta (€)" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className="price-selector" />
+
         <div className="room-selector">
-          {[1,2,3,4,5,6].map(n => (
+          <p>Huoneita</p>
+          {[1, 2, 3, 4, 5, 6].map(n => (
             <label key={n} className="room-nro">
               <input
                 type="checkbox"
@@ -43,12 +61,15 @@ export default function Filters({
             </label>
           ))}
         </div>
+
         <div className="refresh-reset-container">
           <button onClick={handleRefresh} className="refresh-btn">🔄 Lataa asunnot</button>
           <button onClick={() => {
             setMinPrice('');
             setMaxPrice('');
             setSelectedRooms([]);
+            setSortKey('price');
+            setSortOrder('asc');
           }} className="reset-btn">Palauta suodattimet</button>
         </div>
       </div>
