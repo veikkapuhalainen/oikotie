@@ -1,4 +1,3 @@
-import React from 'react';
 import './ErrorComponent.css';
 
 const ErrorComponent = ({ message = 'Asuntojen lataus epäonnistui. Yritä uudestaan.' }) => {

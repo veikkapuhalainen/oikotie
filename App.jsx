@@ -3,8 +3,8 @@ import ApartmentCard from './components/ApartmentCard';
 import Filters from './components/Filters';
 import PaginationControls from './components/PaginationControls';
 import Spinner from './components/Spinner';
-import ErrorComponent from './components/ErrorComponent';
 import './App.css';
+import fetch from 'node-fetch';
 
 const PAGE_SIZE = 50;
 
@@ -28,7 +28,8 @@ function App() {
   useEffect(() => {
     const fetchInitial = async () => {
       setLoading(true);
-      await fetch('http://localhost:3001/api/refresh', { method: 'POST' });
+      await fetch('/api/refresh', { method: 'POST' });
+      await fetchApartments();
       setLoading(false);
     };
     fetchInitial();
@@ -55,7 +56,7 @@ function App() {
       params.append('pageSize', PAGE_SIZE);
 
       try {
-        const res = await fetch(`http://localhost:3001/api/apartments?${params.toString()}`);
+        const res = await fetch(`/api/apartments?${params.toString()}`);
         const data = await res.json();
         setApartments(data.apartments);
         setTotalResults(data.total);
@@ -77,8 +78,9 @@ function App() {
 
   const handleRefresh = async () => {
     setLoading(true);
-    await fetch('http://localhost:3001/api/refresh', { method: 'POST' });
-    setCurrentPage(1); // reset page
+    await fetch('/api/refresh', { method: 'POST' });
+    await fetchApartments();
+    setCurrentPage(1);
     setLoading(false);
   };
 

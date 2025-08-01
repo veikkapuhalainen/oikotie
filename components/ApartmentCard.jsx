@@ -1,5 +1,4 @@
 // src/components/ApartmentCard.jsx
-import React from 'react';
 import './ApartmentCard.css';
 
 function ApartmentCard({ apartment }) {
