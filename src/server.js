@@ -57,34 +57,39 @@ async function fetchApartmentsFromOikotie() {
   const res = await fetch(url.href, { headers });
   const json = await res.json();
 
-  apartments = json.cards.map(card => {
-    const rawPrice = card.price;
-    const size = card.size;
-    const numericPrice = parseFloat((rawPrice || '').replace(/[^\d,.]/g, '').replace(',', '.'));
-    const pricePerSqm = numericPrice && size ? Math.round(numericPrice / size) : null;
+  if (!json.cards) {
+    console.log(`❌ Fetching apartments failed from Oikotie.`);
+    return
+  } else {
+    apartments = json.cards.map(card => {
+      const rawPrice = card.price;
+      const size = card.size;
+      const numericPrice = parseFloat((rawPrice || '').replace(/[^\d,.]/g, '').replace(',', '.'));
+      const pricePerSqm = numericPrice && size ? Math.round(numericPrice / size) : null;
 
-    return {
-      id: card.id,
-      url: card.url,
-      description: card.description,
-      roomConfiguration: card.roomConfiguration,
-      rooms: card.rooms,
-      published: card.published,
-      size: card.size,
-      price: card.price,
-      pricePerSqm,
-      address: card.buildingData?.address,
-      district: card.buildingData?.district,
-      city: card.buildingData?.city,
-      year: card.buildingData?.year,
-      buildingType: card.buildingData?.buildingType,
-      brand: card.brand?.name,
-      visits: card.visits,
-      visitsWeekly: card.visits_weekly,
-      location: card.location,
-      image: card.images?.wide
-    };
-  });
+      return {
+        id: card.id,
+        url: card.url,
+        description: card.description,
+        roomConfiguration: card.roomConfiguration,
+        rooms: card.rooms,
+        published: card.published,
+        size: card.size,
+        price: card.price,
+        pricePerSqm,
+        address: card.buildingData?.address,
+        district: card.buildingData?.district,
+        city: card.buildingData?.city,
+        year: card.buildingData?.year,
+        buildingType: card.buildingData?.buildingType,
+        brand: card.brand?.name,
+        visits: card.visits,
+        visitsWeekly: card.visits_weekly,
+        location: card.location,
+        image: card.images?.wide
+      };
+    });
+  }
 
   console.log(`✅ Fetched ${apartments.length} apartments from Oikotie.`);
 }
@@ -108,6 +113,10 @@ app.get('/api/apartments', async (req, res) => {
     const {
       minPrice,
       maxPrice,
+      minSize,
+      maxSize,
+      minPricePerSqm,
+      maxPricePerSqm,
       rooms,
       sort = 'price',
       order = 'asc',
@@ -117,17 +126,37 @@ app.get('/api/apartments', async (req, res) => {
 
     let filtered = apartments;
 
+    // Filtering with price limitations
     if (minPrice) {
       filtered = filtered.filter(a => parseFloat((a.price || '').toString().replace(/[^\d.]/g, '')) >= Number(minPrice));
     }
     if (maxPrice) {
       filtered = filtered.filter(a => parseFloat((a.price || '').toString().replace(/[^\d.]/g, '')) <= Number(maxPrice));
     }
+    
+    // Filtering with size limitations
+    if (minSize) {
+      filtered = filtered.filter(a => a.size >= Number(minSize));
+    }
+    if (maxSize) {
+      filtered = filtered.filter(a => a.size <= Number(maxSize));
+    }
+
+    // Filtering with pricePerSqm limitations
+    if (minPricePerSqm) {
+      filtered = filtered.filter(a => a.pricePerSqm >= Number(minPricePerSqm));
+    }
+    if (maxPricePerSqm) {
+      filtered = filtered.filter(a => a.pricePerSqm <= Number(maxPricePerSqm));
+    }
+  
+    // Filtering with room amount limitations
     if (rooms) {
       const selected = rooms.split(',').map(Number);
       filtered = filtered.filter(a => selected.includes(Number(a.rooms)));
     }
 
+    // Sort apartments to wanted order
     filtered.sort((a, b) => {
       const aVal = parseFloat((a[sort] || '').toString().replace(/[^\d.]/g, '')) || 0;
       const bVal = parseFloat((b[sort] || '').toString().replace(/[^\d.]/g, '')) || 0;

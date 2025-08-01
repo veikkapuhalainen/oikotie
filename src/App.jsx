@@ -3,6 +3,7 @@ import ApartmentCard from './components/ApartmentCard';
 import Filters from './components/Filters';
 import PaginationControls from './components/PaginationControls';
 import Spinner from './components/Spinner';
+import ErrorComponent from './components/ErrorComponent';
 import './App.css';
 
 const PAGE_SIZE = 50;
@@ -14,6 +15,10 @@ function App() {
   const [sortOrder, setSortOrder] = useState('asc');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [minSize, setMinSize] = useState('');
+  const [maxSize, setMaxSize] = useState('');
+  const [minPricePerSqm, setMinPricePerSqm] = useState('');
+  const [maxPricePerSqm, setMaxPricePerSqm] = useState('');
   const [selectedRooms, setSelectedRooms] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
@@ -36,6 +41,13 @@ function App() {
       const params = new URLSearchParams();
       if (minPrice) params.append('minPrice', minPrice);
       if (maxPrice) params.append('maxPrice', maxPrice);
+
+      if (minSize) params.append('minSize', minSize);
+      if (maxSize) params.append('maxSize', maxSize);
+
+      if (minPricePerSqm) params.append('minPricePerSqm', minPricePerSqm);
+      if (maxPricePerSqm) params.append('maxPricePerSqm', maxPricePerSqm);
+
       if (selectedRooms.length > 0) params.append('rooms', selectedRooms.join(','));
       params.append('sort', sortKey);
       params.append('order', sortOrder);
@@ -56,12 +68,12 @@ function App() {
     };
 
     fetchApartments();
-  }, [minPrice, maxPrice, selectedRooms, sortKey, sortOrder, currentPage]);
+  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, sortKey, sortOrder, currentPage]);
 
    // 👇 Reset to first page on filter/sort changes only
   useEffect(() => {
     setCurrentPage(1);
-  }, [minPrice, maxPrice, selectedRooms, sortKey, sortOrder]);
+  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, sortKey, sortOrder]);
 
   const handleRefresh = async () => {
     setLoading(true);
@@ -70,12 +82,13 @@ function App() {
     setLoading(false);
   };
 
+
   return (
     <div className="p-4 bg-blue-50 min-h-screen">
       <header className="app-header">
         <h1 className="app-title">🏠 Oikotie-Haku</h1>
         <div className="results-count">
-          <span>{totalResults}</span> asuntoa haettu✅
+          <span>{loading ? "..." : totalResults}</span> asuntoa löytyi✅
         </div>
       </header>
 
@@ -88,6 +101,14 @@ function App() {
         setMinPrice={setMinPrice}
         maxPrice={maxPrice}
         setMaxPrice={setMaxPrice}
+        minSize={minSize}
+        setMinSize={setMinSize}
+        maxSize={maxSize}
+        setMaxSize={setMaxSize}
+        minPricePerSqm={minPricePerSqm}
+        setMinPricePerSqm={setMinPricePerSqm}
+        maxPricePerSqm={maxPricePerSqm}
+        setMaxPricePerSqm={setMaxPricePerSqm}
         selectedRooms={selectedRooms}
         setSelectedRooms={setSelectedRooms}
         handleRefresh={handleRefresh}
@@ -95,7 +116,7 @@ function App() {
 
       <PaginationControls
         setPage={setCurrentPage}
-        currentPage={currentPage}
+        currentPage={totalPages === 0 ? 0 : currentPage}
         totalPages={totalPages}
       />
 
@@ -111,7 +132,7 @@ function App() {
 
       <PaginationControls
         setPage={setCurrentPage}
-        currentPage={currentPage}
+        currentPage={totalPages === 0 ? 0 : currentPage}
         totalPages={totalPages}
       />
     </div>

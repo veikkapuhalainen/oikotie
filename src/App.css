@@ -1,8 +1,13 @@
 /* src/App.css */
 
+body {
+  font-family: 'Inter', sans-serif;
+}
+
 .responsive-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 20px;
 }
 
@@ -33,8 +38,10 @@
 }
 
 .apartment-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 20px;
 }
 
@@ -112,3 +119,4 @@ span {
   justify-content: center;
   padding: 5px;
 }
+

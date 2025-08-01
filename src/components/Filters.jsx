@@ -10,6 +10,14 @@ export default function Filters({
   setMinPrice,
   maxPrice,
   setMaxPrice,
+  minSize,
+  setMinSize,
+  maxSize,
+  setMaxSize,
+  minPricePerSqm,
+  setMinPricePerSqm,
+  maxPricePerSqm,
+  setMaxPricePerSqm,
   selectedRooms,
   setSelectedRooms,
   handleRefresh,
@@ -45,6 +53,12 @@ export default function Filters({
         <input type="number" placeholder="Min Hinta (€)" value={minPrice} onChange={e => setMinPrice(e.target.value)} className="price-selector" />
         <input type="number" placeholder="Max Hinta (€)" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className="price-selector" />
 
+        <input type="number" placeholder="Min Koko (m²)" value={minSize} onChange={e => setMinSize(e.target.value)} className="size-selector" />
+        <input type="number" placeholder="Max Koko (m²)" value={maxSize} onChange={e => setMaxSize(e.target.value)} className="size-selector" />
+
+        <input type="number" placeholder="Min Neliöhinta (€/m²)" value={minPricePerSqm} onChange={e => setMinPricePerSqm(e.target.value)} className="size-selector" />
+        <input type="number" placeholder="Max Neliöhinta (€/m²)" value={maxPricePerSqm} onChange={e => setMaxPricePerSqm(e.target.value)} className="size-selector" />
+
         <div className="room-selector">
           <p>Huoneita</p>
           {[1, 2, 3, 4, 5, 6].map(n => (
@@ -67,10 +81,14 @@ export default function Filters({
           <button onClick={() => {
             setMinPrice('');
             setMaxPrice('');
+            setMinSize('');
+            setMaxSize('');
+            setMinPricePerSqm('');
+            setMaxPricePerSqm('');
             setSelectedRooms([]);
             setSortKey('price');
             setSortOrder('asc');
-          }} className="reset-btn">Palauta suodattimet</button>
+          }} className="reset-btn">Nollaa suodattimet</button>
         </div>
       </div>
     </div>
