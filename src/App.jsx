@@ -35,38 +35,39 @@ function App() {
   }, []); // Run only once when the app loads
 
   // ✅ Backend filtering + sorting + pagination
+  const fetchApartments = async () => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (minPrice) params.append('minPrice', minPrice);
+    if (maxPrice) params.append('maxPrice', maxPrice);
+
+    if (minSize) params.append('minSize', minSize);
+    if (maxSize) params.append('maxSize', maxSize);
+
+    if (minPricePerSqm) params.append('minPricePerSqm', minPricePerSqm);
+    if (maxPricePerSqm) params.append('maxPricePerSqm', maxPricePerSqm);
+
+    if (selectedRooms.length > 0) params.append('rooms', selectedRooms.join(','));
+    params.append('sort', sortKey);
+    params.append('order', sortOrder);
+    params.append('page', currentPage);
+    params.append('pageSize', PAGE_SIZE);
+
+    try {
+      const res = await fetch(`/api/apartments?${params.toString()}`);
+      const data = await res.json();
+      setApartments(data.apartments);
+      setTotalResults(data.total);
+      setTotalPages(Math.ceil(data.total / PAGE_SIZE));
+    } catch (err) {
+      console.error('❌ Failed to fetch apartments:', err);
+      setApartments([]);
+    }
+    setLoading(false);
+  };
+
+
   useEffect(() => {
-    const fetchApartments = async () => {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (minPrice) params.append('minPrice', minPrice);
-      if (maxPrice) params.append('maxPrice', maxPrice);
-
-      if (minSize) params.append('minSize', minSize);
-      if (maxSize) params.append('maxSize', maxSize);
-
-      if (minPricePerSqm) params.append('minPricePerSqm', minPricePerSqm);
-      if (maxPricePerSqm) params.append('maxPricePerSqm', maxPricePerSqm);
-
-      if (selectedRooms.length > 0) params.append('rooms', selectedRooms.join(','));
-      params.append('sort', sortKey);
-      params.append('order', sortOrder);
-      params.append('page', currentPage);
-      params.append('pageSize', PAGE_SIZE);
-
-      try {
-        const res = await fetch(`/api/apartments?${params.toString()}`);
-        const data = await res.json();
-        setApartments(data.apartments);
-        setTotalResults(data.total);
-        setTotalPages(Math.ceil(data.total / PAGE_SIZE));
-      } catch (err) {
-        console.error('❌ Failed to fetch apartments:', err);
-        setApartments([]);
-      }
-      setLoading(false);
-    };
-
     fetchApartments();
   }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, sortKey, sortOrder, currentPage]);
 
