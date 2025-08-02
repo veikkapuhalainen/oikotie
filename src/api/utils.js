@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 
 const LOCATIONS_HELSINKI = JSON.stringify([[64, 6, 'Helsinki']]);
 

@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import ApartmentCard from './components/ApartmentCard';
-import Filters from './components/Filters';
-import PaginationControls from './components/PaginationControls';
-import Spinner from './components/Spinner';
+import ApartmentCard from './components/ApartmentCard.jsx';
+import Filters from './components/Filters.jsx';
+import PaginationControls from './components/PaginationControls.jsx';
+import Spinner from './components/Spinner.jsx';
 import './App.css';
-import fetch from 'node-fetch';
 
 const PAGE_SIZE = 50;
 
