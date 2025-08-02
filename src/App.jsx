@@ -23,16 +23,6 @@ function App() {
   const [totalResults, setTotalResults] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Refresh data only on full reload (e.g. F5)
-  useEffect(() => {
-    const fetchInitial = async () => {
-      setLoading(true);
-      await fetch('/api/refresh', { method: 'POST' });
-      await fetchApartments();
-      setLoading(false);
-    };
-    fetchInitial();
-  }, []); // Run only once when the app loads
 
   // ✅ Backend filtering + sorting + pagination
   const fetchApartments = async () => {
@@ -66,6 +56,21 @@ function App() {
     setLoading(false);
   };
 
+  // ✅ Refresh data only on full reload (e.g. F5)
+  useEffect(() => {
+    fetchApartments();
+    /*
+    const fetchInitial = async () => {
+      setLoading(true);
+      await fetch('/api/refresh', { method: 'POST' });
+      await fetchApartments();
+      setLoading(false);
+    };
+    fetchInitial();
+    */
+
+  }, []); // Run only once when the app loads
+
 
   useEffect(() => {
     fetchApartments();
@@ -78,7 +83,7 @@ function App() {
 
   const handleRefresh = async () => {
     setLoading(true);
-    await fetch('/api/refresh', { method: 'POST' });
+    //await fetch('/api/refresh', { method: 'POST' });
     await fetchApartments();
     setCurrentPage(1);
     setLoading(false);
@@ -90,7 +95,7 @@ function App() {
       <header className="app-header">
         <h1 className="app-title">🏠 Oikotie-Haku</h1>
         <div className="results-count">
-          <span>{loading ? "..." : totalResults}</span> asuntoa löytyi✅
+          <span>{loading ? "..." : totalResults}</span> asuntoa löytyi {totalResults === 0 ? '❌' : '✅'}
         </div>
       </header>
 
