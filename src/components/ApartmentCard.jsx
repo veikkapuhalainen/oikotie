@@ -1,4 +1,3 @@
-// src/components/ApartmentCard.jsx
 import './ApartmentCard.css';
 
 function ApartmentCard({ apartment }) {

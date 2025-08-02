@@ -1,4 +1,3 @@
-
 const LOCATIONS_HELSINKI = JSON.stringify([[64, 6, 'Helsinki']]);
 
 const API_URL = 'https://asunnot.oikotie.fi/api/cards';

@@ -1,5 +1,5 @@
 import { fetchFromOikotie } from './utils.js';
-import { setApartments } from './data.js';
+import { saveApartments } from './data.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
   try {
     const apartments = await fetchFromOikotie();
-    setApartments(apartments);
+    saveApartments(apartments);
     res.status(200).json({ success: true, count: apartments.length });
   } catch (err) {
     console.error('❌ Refresh failed:', err);
