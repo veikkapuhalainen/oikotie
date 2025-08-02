@@ -18,28 +18,29 @@ function getOikotieSortBy(sortKey, sortOrder) {
 }
 
 function normalizeApartment(card) {
-
-  const pricePerSqm = card.data?.pricePerSqm || '-';
+  const price = parseFloat((card.data.price || '').replace(/[^\d,.]/g, '').replace(',', '.'));
+  const size = parseFloat((card.data.size || '').replace(/[^\d,.]/g, '').replace(',', '.'));
+  const pricePerSqm = price && size ? Math.round(price / size) : null;
 
   return {
-    id: card.id,
+    id: card.cardId,
     url: card.url,
-    description: card.data.description,
-    roomConfiguration: card.data.roomConfiguration,
-    rooms: card.data.rooms,
-    size: card.data.size,
-    price: card.data.price,
+    description: card.data.description || '',
+    roomConfiguration: card.data.roomConfiguration || '',
+    rooms: card.data.rooms || null,
+    size: card.data.size || '',
+    price: card.data.price || '',
     pricePerSqm,
-    address: card.location.address,
-    district: card.location.district,
-    city: card.location.city,
-    year: card.data.buildYear,
-    buildingType: card.subType,
-    brand: card.company?.companyName,
-    visits: card.data.visits,
-    visitsWeekly: card.data.visitsWeekly,
-    location: card.location,
-    image: card.medias[0].imageDesktopWebP
+    address: card.location?.address || '',
+    district: card.location?.district || '',
+    city: card.location?.city || '',
+    year: card.data.buildYear || '',
+    buildingType: card.cardSubType || '',
+    brand: card.company?.companyName || '',
+    visits: card.data.visits || 0,
+    visitsWeekly: card.data.visitsWeekly || 0,
+    location: card.location || null,
+    image: card.medias?.[0]?.imageDesktopWebP || card.medias?.[0]?.imageUrl || ''
   };
 }
 
