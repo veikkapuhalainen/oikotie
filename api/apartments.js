@@ -17,6 +17,35 @@ function getOikotieSortBy(sortKey, sortOrder) {
   return `${key}_${orderSuffix}`; // e.g., "price_asc", "published_sort_desc"
 }
 
+function normalizeApartment(card) {
+  const size = card.size;
+  const price = parseFloat((card.price || '').replace(/[^\d,.]/g, '').replace(',', '.'));
+  const pricePerSqm = price && size ? Math.round(price / size) : null;
+
+  return {
+    id: card.id,
+    url: card.url,
+    description: card.description,
+    roomConfiguration: card.roomConfiguration,
+    rooms: card.rooms,
+    published: card.published,
+    size,
+    price: card.price,
+    pricePerSqm,
+    address: card.buildingData?.address,
+    district: card.buildingData?.district,
+    city: card.buildingData?.city,
+    year: card.buildingData?.year,
+    buildingType: card.buildingData?.buildingType,
+    brand: card.brand?.name,
+    visits: card.visits,
+    visitsWeekly: card.visits_weekly,
+    location: card.location,
+    image: card.images?.wide
+  };
+}
+
+
 export default async function handler(req, res) {
   const { method, query } = req;
   if (method !== 'GET') return res.status(405).end('Method Not Allowed');
@@ -74,7 +103,7 @@ export default async function handler(req, res) {
     const pageRes = await fetch(`${API_URL}?${pageParams}`, { headers });
     const pageJson = await pageRes.json();
 
-    let apartments = (pageJson.cards || []).map(normalizeApartment);
+    let apartments = (pageJson.cards || []).map( card => normalizeApartment(card));
 
     // Optional fallback filtering (e.g., pricePerSqm) — not supported directly by Oikotie
     if (minPricePerSqm) {
@@ -96,35 +125,6 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to fetch apartments' });
   }
 }
-
-function normalizeApartment(card) {
-  const size = card.size;
-  const price = parseFloat((card.price || '').replace(/[^\d,.]/g, '').replace(',', '.'));
-  const pricePerSqm = price && size ? Math.round(price / size) : null;
-
-  return {
-    id: card.id,
-    url: card.url,
-    description: card.description,
-    roomConfiguration: card.roomConfiguration,
-    rooms: card.rooms,
-    published: card.published,
-    size,
-    price: card.price,
-    pricePerSqm,
-    address: card.buildingData?.address,
-    district: card.buildingData?.district,
-    city: card.buildingData?.city,
-    year: card.buildingData?.year,
-    buildingType: card.buildingData?.buildingType,
-    brand: card.brand?.name,
-    visits: card.visits,
-    visitsWeekly: card.visits_weekly,
-    location: card.location,
-    image: card.images?.wide
-  };
-}
-
 
 
 
