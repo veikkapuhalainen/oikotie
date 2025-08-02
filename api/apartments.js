@@ -18,30 +18,28 @@ function getOikotieSortBy(sortKey, sortOrder) {
 }
 
 function normalizeApartment(card) {
-  const size = card.size;
-  const price = parseFloat((card.price || '').replace(/[^\d,.]/g, '').replace(',', '.'));
-  const pricePerSqm = price && size ? Math.round(price / size) : null;
+
+  const pricePerSqm = card.data?.pricePerSqm || '-';
 
   return {
     id: card.id,
     url: card.url,
-    description: card.description,
-    roomConfiguration: card.roomConfiguration,
-    rooms: card.rooms,
-    published: card.published,
-    size,
-    price: card.price,
+    description: card.data.description,
+    roomConfiguration: card.data.roomConfiguration,
+    rooms: card.data.rooms,
+    size: card.data.size,
+    price: card.data.price,
     pricePerSqm,
-    address: card.buildingData?.address,
-    district: card.buildingData?.district,
-    city: card.buildingData?.city,
-    year: card.buildingData?.year,
-    buildingType: card.buildingData?.buildingType,
-    brand: card.brand?.name,
-    visits: card.visits,
-    visitsWeekly: card.visits_weekly,
+    address: card.location.address,
+    district: card.location.district,
+    city: card.location.city,
+    year: card.data.buildYear,
+    buildingType: card.subType,
+    brand: card.company?.companyName,
+    visits: card.data.visits,
+    visitsWeekly: card.data.visitsWeekly,
     location: card.location,
-    image: card.images?.wide
+    image: card.medias[0].imageDesktopWebP
   };
 }
 

@@ -27,7 +27,7 @@ function ApartmentCard({ apartment }) {
         <p className="apartment-description">{description}</p>
         <div className="apartment-info">
           <span>{roomConfiguration}</span>
-          <span>{size} m²</span>
+          <span>{size}</span>
           <span>{rooms} huonetta</span>
           <span>Rakennettu {year}</span>
         </div>
