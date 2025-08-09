@@ -3,6 +3,11 @@ import { getHeaders } from './utils.js';
 
 const API_URL = 'https://asunnot.oikotie.fi/api/search';
 
+const MANUAL_SORT_KEYS = new Set(['pricePerSqm', 'rooms', 'year', 'visits']);
+const API_SORT_KEYS = new Set(['price', 'size', 'published']); // what Oikotie supports in your map
+const MAX_MANUAL_FETCH = 500; // safety cap; tune as you like
+const BATCH_SIZE = 200;
+
 // Helper function to create right params for sorting
 function getOikotieSortBy(sortKey, sortOrder) {
   const sortMap = {
@@ -10,11 +15,43 @@ function getOikotieSortBy(sortKey, sortOrder) {
     size: 'size',
     published: 'published_sort',
   };
-
+  if (!API_SORT_KEYS.has(sortKey)) return null;
   const key = sortMap[sortKey] || 'published_sort';
   const orderSuffix = sortOrder === 'asc' ? 'asc' : 'desc';
+  return `${key}_${orderSuffix}`;
+}
 
-  return `${key}_${orderSuffix}`; // e.g., "price_asc", "published_sort_desc"
+// generic comparator with nulls pushed to the end
+function compareValues(a, b, order = 'asc') {
+  const dir = order === 'asc' ? 1 : -1;
+  const an = (a === null || a === undefined || Number.isNaN(a));
+  const bn = (b === null || b === undefined || Number.isNaN(b));
+  if (an && bn) return 0;
+  if (an) return 1;      // nulls last
+  if (bn) return -1;
+  if (a < b) return -1 * dir;
+  if (a > b) return 1 * dir;
+  return 0;
+}
+
+// derive the field we sort by from normalized apartment
+function getSortField(ap, key) {
+  switch (key) {
+    case 'pricePerSqm': return ap.pricePerSqm ?? null;
+    case 'rooms':       return ap.rooms != null ? Number(ap.rooms) : null;
+    case 'year':        return ap.year != null && ap.year !== '' ? Number(ap.year) : null;
+    case 'visits':      return ap.visits != null ? Number(ap.visits) : null;
+    case 'visitsWeekly':return ap.visitsWeekly != null ? Number(ap.visitsWeekly) : null;
+    case 'price': {
+      const n = parseFloat((ap.price || '').toString().replace(/[^\d,.]/g, '').replace(',', '.'));
+      return Number.isFinite(n) ? n : null;
+    }
+    case 'size': {
+      const s = parseFloat((ap.size || '').toString().split('/')[0].trim().replace(/[^\d,.]/g, '').replace(',', '.'));
+      return Number.isFinite(s) ? s : null;
+    }
+    default: return null;
+  }
 }
 
 function normalizeApartment(card) {
@@ -109,18 +146,68 @@ export default async function handler(req, res) {
     const totalRes = await fetch(`${API_URL}?${totalParams}`, { headers });
     const totalJson = await totalRes.json();
     const total = totalJson.found || 0;
+    const totalUnfiltered = totalJson.found || 0;
+
+    const apiSortStr = getOikotieSortBy(sort, order);
+    const manualSort = MANUAL_SORT_KEYS.has(sort) || !apiSortStr || minPricePerSqm || maxPricePerSqm;
+
+    let apartments = [];
+    let totalFiltered = totalUnfiltered;
+    if (manualSort) {
+      // 2a) MANUAL: fetch all (up to cap), then sort & paginate
+      const toFetch = Math.min(totalUnfiltered, MAX_MANUAL_FETCH);
+      let fetched = 0;
+
+      while (fetched < toFetch) {
+        const limit = Math.min(BATCH_SIZE, toFetch - fetched);
+        const p = buildParams({
+          ...baseParams,
+          limit,
+          offset: fetched,
+        });
+        const resp = await fetch(`${API_URL}?${p}`, { headers });
+        const json = await resp.json();
+        const batch = (json.cards || []).map(normalizeApartment);
+
+        // local per-sqm filters applied as we go
+        let filtered = batch;
+        if (minPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm >= Number(minPricePerSqm));
+        if (maxPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm <= Number(maxPricePerSqm));
+
+        apartments.push(...filtered);
+        fetched += limit;
+
+        if (!json.cards || json.cards.length < limit) break; // no more
+      }
+
+      totalFiltered = apartments.length;
+
+      // sort locally
+      apartments.sort((a, b) => {
+        const av = getSortField(a, sort);
+        const bv = getSortField(b, sort);
+        return compareValues(av, bv, order);
+      });
+
+      // paginate locally
+      const start = offset;
+      const end = offset + size;
+      apartments = apartments.slice(start, end);
+
+    } else {
 
     // Actual page fetch
-    const pageParams = buildParams(baseParams, {
-      limit: size,
-      offset,
-      sortBy: getOikotieSortBy(sort, order)
-  });
+      const pageParams = buildParams({
+        ...baseParams,
+        limit: size,
+        offset,
+        sortBy: apiSortStr
+      }, roomList);
 
     const pageRes = await fetch(`${API_URL}?${pageParams}`, { headers });
     const pageJson = await pageRes.json();
 
-    let apartments = (pageJson.cards || []).map(normalizeApartment);
+    apartments = (pageJson.cards || []).map(normalizeApartment);
 
     // Optional fallback filtering (e.g., pricePerSqm) — not supported directly by Oikotie
     if (minPricePerSqm) {
@@ -130,11 +217,17 @@ export default async function handler(req, res) {
       apartments = apartments.filter(a => a.pricePerSqm <= Number(maxPricePerSqm));
     }
 
+    totalFiltered = totalUnfiltered;
+  }
+
     res.json({
       apartments,
-      total,
+      total: manualSort ? totalFiltered : totalUnfiltered,
+      totalUnfiltered,
       page: pageNum,
-      pageSize: size
+      pageSize: size,
+      manualSortApplied: manualSort,
+      manualSortCap: manualSort ? MAX_MANUAL_FETCH : undefined
     });
 
   } catch (err) {
