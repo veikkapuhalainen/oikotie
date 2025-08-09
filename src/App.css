@@ -119,3 +119,17 @@ span {
   padding: 5px;
 }
 
+
+@media only screen and (max-width: 730px) { 
+
+  .app-header {
+    margin-bottom: 10px;
+    background-color: #f4f6f8;
+    padding: 8px 16px;
+}
+
+  .app-title {
+    font-size: 1.5rem;
+    gap: 6px;
+}
+}

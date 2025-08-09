@@ -69,3 +69,44 @@
 .reset-btn:hover {
   background-color: #b4b8c2;
 }
+
+
+@media only screen and (max-width: 730px) { 
+  .filter-container {
+    padding: 10px;
+    margin-bottom: 16px;
+}
+
+.filter-container-header {
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.filters {
+  gap: 8px;
+}
+
+.sort-selector,
+.size-selector,
+.price-selector {
+  padding: 6px;
+  font-size: 0.85rem;
+  min-width: 130px;
+}
+
+.room-selector {
+  gap: 6px;
+}
+
+.refresh-reset-container {
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.refresh-btn,
+.reset-btn {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+}
+
+}
