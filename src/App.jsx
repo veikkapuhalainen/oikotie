@@ -10,8 +10,7 @@ const PAGE_SIZE = 50;
 function App() {
   const [apartments, setApartments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortKey, setSortKey] = useState('published_sort');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortKey, setSortKey] = useState('published_sort_desc');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [minSize, setMinSize] = useState('');
@@ -39,7 +38,6 @@ function App() {
 
     if (selectedRooms.length > 0) params.append('rooms', selectedRooms.join(','));
     params.append('sort', sortKey);
-    params.append('order', sortOrder);
     params.append('page', currentPage);
     params.append('pageSize', PAGE_SIZE);
 
@@ -76,12 +74,12 @@ function App() {
 
   useEffect(() => {
     fetchApartments();
-  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, sortKey, sortOrder, currentPage]);
+  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, sortKey, currentPage]);
 
    // 👇 Reset to first page on filter/sort changes only
   useEffect(() => {
     setCurrentPage(1);
-  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, sortKey, sortOrder]);
+  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, sortKey]);
 
   const handleRefresh = async () => {
     setLoading(true);
@@ -104,8 +102,6 @@ function App() {
       <Filters
         sortKey={sortKey}
         setSortKey={setSortKey}
-        sortOrder={sortOrder}
-        setSortOrder={setSortOrder}
         minPrice={minPrice}
         setMinPrice={setMinPrice}
         maxPrice={maxPrice}

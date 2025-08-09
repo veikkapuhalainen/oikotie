@@ -4,20 +4,6 @@ import { getHeaders } from './utils.js';
 const API_URL = 'https://asunnot.oikotie.fi/api/search';
 
 
-// Helper function to create right params for sorting
-function getOikotieSortBy(sortKey, sortOrder) {
-  const sortMap = {
-    price: 'price',
-    size: 'size',
-    published: 'published_sort',
-  };
-  if (!API_SORT_KEYS.has(sortKey)) return null;
-  const key = sortMap[sortKey] || 'published_sort';
-  const orderSuffix = sortOrder === 'asc' ? 'asc' : 'desc';
-  return `${key}_${orderSuffix}`;
-}
-
-
 function normalizeApartment(card) {
   const price = parseFloat((card.data.price || '').replace(/[^\d,.]/g, '').replace(',', '.'));
 
@@ -62,8 +48,7 @@ export default async function handler(req, res) {
     minPricePerSqm,
     maxPricePerSqm,
     rooms,
-    sort = 'published_sort',
-    order = 'desc',
+    sort = 'published_sort_desc',
   } = req.query;
 
   const pageNum = Number(page);
@@ -116,7 +101,7 @@ export default async function handler(req, res) {
       ...baseParams,
       limit: size,
       offset,
-      sortBy: apiSortStr
+      sortBy: sort
     }, roomList);
 
     const pageRes = await fetch(`${API_URL}?${pageParams}`, { headers });

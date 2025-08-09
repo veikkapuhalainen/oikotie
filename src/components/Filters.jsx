@@ -4,8 +4,6 @@ import "./Filters.css";
 export default function Filters({
   sortKey,
   setSortKey,
-  sortOrder,
-  setSortOrder,
   minPrice,
   setMinPrice,
   maxPrice,
@@ -27,12 +25,8 @@ export default function Filters({
       <div className="filter-container-header">⚙️ Suodata & Järjestä</div>
       <div className="filters">
         <select
-          value={`${sortKey}_${sortOrder}`}
-          onChange={e => {
-            const [key, order] = e.target.value.split('_');
-            setSortKey(key);
-            setSortOrder(order);
-          }}
+          value={sortKey}
+          onChange={e => setSortKey(e.target.value)}
           className="sort-selector"
         >
           <option value="published_sort_desc">Uusin ilmoitus ensin</option>
@@ -81,8 +75,7 @@ export default function Filters({
             setMinPricePerSqm('');
             setMaxPricePerSqm('');
             setSelectedRooms([]);
-            setSortKey('published_sort');
-            setSortOrder('desc');
+            setSortKey('published_sort_desc');
           }} className="reset-btn">Nollaa suodattimet</button>
         </div>
       </div>
