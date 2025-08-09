@@ -35,18 +35,13 @@ export default function Filters({
           }}
           className="sort-selector"
         >
-          <option value="price_asc">Hinta: Pieni-Suuri</option>
-          <option value="price_desc">Hinta: Suuri-Pieni</option>
-          <option value="pricePerSqm_asc">Neliöhinta: Pieni-Suuri</option>
-          <option value="pricePerSqm_desc">Neliöhinta: Suuri-Pieni</option>
-          <option value="size_asc">Koko: Pieni-Suuri</option>
-          <option value="size_desc">Koko: Suuri-Pieni</option>
-          <option value="rooms_asc">Huoneita: Vähän-Enemmän</option>
-          <option value="rooms_desc">Huoneita: Enemmän-Vähemmän</option>
-          <option value="year_asc">Vuosi: Vanhin-Uusin</option>
-          <option value="year_desc">Vuosi: Uusin-Vanhin</option>
-          <option value="visits_asc">Käyntejä: Vähän-Paljon</option>
-          <option value="visits_desc">Käyntejä: Paljon-Vähän</option>
+          <option value="published_sort_desc">Uusin ilmoitus ensin</option>
+          <option value="published_sort_asc">Vanhin ilmoitus ensin</option>
+          <option value="price_asc">Halvin ilmoitus ensin</option>
+          <option value="price_desc">Kallein ilmoitus ensin</option>
+          <option value="size_asc">Pienin ilmoitus ensin</option>
+          <option value="size_desc">Suurin ilmoitus ensin</option>
+          <option value="popularity_week_desc">Suosituin ilmoitus ensin</option>
         </select>
 
 
@@ -86,11 +81,12 @@ export default function Filters({
             setMinPricePerSqm('');
             setMaxPricePerSqm('');
             setSelectedRooms([]);
-            setSortKey('price');
-            setSortOrder('asc');
+            setSortKey('published_sort');
+            setSortOrder('desc');
           }} className="reset-btn">Nollaa suodattimet</button>
         </div>
       </div>
     </div>
+    
   );
 }

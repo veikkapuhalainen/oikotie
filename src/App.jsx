@@ -10,8 +10,8 @@ const PAGE_SIZE = 50;
 function App() {
   const [apartments, setApartments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortKey, setSortKey] = useState('price');
-  const [sortOrder, setSortOrder] = useState('asc');
+  const [sortKey, setSortKey] = useState('published_sort');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [minSize, setMinSize] = useState('');
@@ -21,9 +21,6 @@ function App() {
   const [selectedRooms, setSelectedRooms] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0); // filtered/correct total
-  const [totalUnfiltered, setTotalUnfiltered] = useState(0);  // API’s found count
-  const [manualSortApplied, setManualSortApplied] = useState(false);
-  const [manualSortCap, setManualSortCap] = useState(undefined);
   const [loading, setLoading] = useState(false);
 
 
@@ -51,17 +48,11 @@ function App() {
       const data = await res.json();
       setApartments(data.apartments);
       setTotalResults(data.total);
-      setTotalUnfiltered(Number(data.totalUnfiltered || 0));    // optional display
-      setManualSortApplied(Boolean(data.manualSortApplied));
-      setManualSortCap(data.manualSortCap);
       setTotalPages(Math.ceil(data.total / PAGE_SIZE));
     } catch (err) {
       console.error('❌ Failed to fetch apartments:', err);
       setApartments([]);
       setTotalResults(0);
-      setTotalUnfiltered(0);
-      setManualSortApplied(false);
-      setManualSortCap(undefined);
       setTotalPages(1);
     }
     setLoading(false);
@@ -147,7 +138,7 @@ function App() {
           ))}
         </div>
       )}
-      
+
       <PaginationControls
         setPage={setCurrentPage}
         currentPage={totalPages === 0 ? 0 : currentPage}
