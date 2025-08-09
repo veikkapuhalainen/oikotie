@@ -19,7 +19,9 @@ function getOikotieSortBy(sortKey, sortOrder) {
 
 function normalizeApartment(card) {
   const price = parseFloat((card.data.price || '').replace(/[^\d,.]/g, '').replace(',', '.'));
-  const size = parseFloat((card.data.size || '').replace(/[^\d,.]/g, '').replace(',', '.'));
+
+  let size = card.data.size.split('/')[0].trim();
+  size = parseFloat(size.replace(/[^\d,.]/g, '').replace(',', '.'));
   const pricePerSqm = price && size ? Math.round(price / size) : null;
 
   return {
