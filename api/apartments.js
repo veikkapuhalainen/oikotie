@@ -67,7 +67,7 @@ export default async function handler(req, res) {
 
   const pageNum = Number(page);
   const size = Number(pageSize);
-  const offset = (page - 1) * pageSize;
+  const offset = (pageNum - 1) * size;
 
   try {
     const headers = await getHeaders();
@@ -83,28 +83,44 @@ export default async function handler(req, res) {
     if (maxPrice) baseParams['price[max]'] = maxPrice;
     if (minSize) baseParams['size[min]'] = minSize;
     if (maxSize) baseParams['size[max]'] = maxSize;
-    if (rooms) {
-      const roomList = rooms.split(',');
-      roomList.forEach(r => baseParams['roomCount[]'] = roomList); // send array
-    }
 
-    const totalParams = new URLSearchParams(baseParams);
+    let roomList = null;
+    if (rooms) {
+      roomList = rooms.split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  // Helper to build URLSearchParams with array support
+  const buildParams = (obj, extras = {}) => {
+    const p = new URLSearchParams();
+    Object.entries({ ...obj, ...extras }).forEach(([k, v]) => {
+      if (v === undefined || v === null) return;
+      if (Array.isArray(v)) v.forEach(val => p.append(k, String(val)));
+      else p.append(k, String(v));
+    });
+    // Add roomCount[] correctly
+    if (roomList && roomList.length) {
+      roomList.forEach(r => p.append('roomCount[]', String(r)));
+    }
+    return p;
+  };
+
+
+    const totalParams = buildParams(baseParams);
     const totalRes = await fetch(`${API_URL}?${totalParams}`, { headers });
     const totalJson = await totalRes.json();
     const total = totalJson.found || 0;
 
     // Actual page fetch
-    const pageParams = new URLSearchParams({
-      ...baseParams,
+    const pageParams = buildParams(baseParams, {
       limit: size,
       offset,
       sortBy: getOikotieSortBy(sort, order)
-    });
+  });
 
     const pageRes = await fetch(`${API_URL}?${pageParams}`, { headers });
     const pageJson = await pageRes.json();
 
-    let apartments = (pageJson.cards || []).map( card => normalizeApartment(card));
+    let apartments = (pageJson.cards || []).map(normalizeApartment);
 
     // Optional fallback filtering (e.g., pricePerSqm) — not supported directly by Oikotie
     if (minPricePerSqm) {
