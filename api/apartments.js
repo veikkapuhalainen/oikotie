@@ -37,14 +37,13 @@ function normalizeApartment(card) {
 }
 
   // Helper to build URLSearchParams with array support
-  function buildParams(obj, extras) {
+  function buildParams(obj, roomList) {
     const p = new URLSearchParams();
-    Object.entries({ ...obj, ...extras }).forEach(([k, v]) => {
-      if (v === undefined || v === null) return;
-      if (Array.isArray(v)) v.forEach(val => p.append(k, String(val)));
-      else p.append(k, String(v));
-    });
-    // Add roomCount[]
+    Object.entries(obj || {}).forEach(([k, v]) => {
+    if (v === undefined || v === null) return;
+    if (Array.isArray(v)) v.forEach(val => p.append(k, String(val)));
+    else p.append(k, String(v));
+  });
     if (roomList && roomList.length) {
       roomList.forEach(r => p.append('roomCount[]', String(r)));
     }
@@ -113,7 +112,7 @@ export default async function handler(req, res) {
         );
         const resp = await fetch(`${API_URL}?${params}`, { headers });
         const json = await resp.json();
-        const cards = json.cards || [];
+        const cards = Array.isArray(json.cards) ? json.cards : [];
         if (cards.length === 0) break;
 
         const batch = cards.map(normalizeApartment);
@@ -127,16 +126,15 @@ export default async function handler(req, res) {
         allFiltered.push(...filtered);
 
         fetched += cards.length;
-        
         if (!json.cards || cards.length < limit) break;
       }
 
-      const totalFiltered = allFiltered.length;
+      const total = allFiltered.length;
       const apartments = allFiltered.slice(offset, offset + size);
 
       return res.json({
         apartments,
-        total: totalFiltered, // correct total after €/m²
+        total, // correct total after €/m²
         page: pageNum,
         pageSize: size,
       });
@@ -152,8 +150,8 @@ export default async function handler(req, res) {
 
     const pageRes = await fetch(`${API_URL}?${pageParams}`, { headers });
     const pageJson = await pageRes.json();
-
-    const apartments = (pageJson.cards || []).map(normalizeApartment);
+    const cards = Array.isArray(pageJson.cards) ? pageJson.cards : [];
+    const apartments = cards.map(normalizeApartment);
 
 
     /* ---Old manual style---
