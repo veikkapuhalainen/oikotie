@@ -4,7 +4,7 @@ const API_URL = 'https://asunnot.oikotie.fi/api/search';
 
 // caps & batch size for manual mode
 const MAX_MANUAL_FETCH = 2000;
-const BATCH_SIZE = 200;
+const BATCH_SIZE = 1500;
 
 
 function normalizeApartment(card) {
@@ -36,6 +36,21 @@ function normalizeApartment(card) {
   };
 }
 
+  // Helper to build URLSearchParams with array support
+  function buildParams(obj, extras) {
+    const p = new URLSearchParams();
+    Object.entries({ ...obj, ...extras }).forEach(([k, v]) => {
+      if (v === undefined || v === null) return;
+      if (Array.isArray(v)) v.forEach(val => p.append(k, String(val)));
+      else p.append(k, String(v));
+    });
+    // Add roomCount[]
+    if (roomList && roomList.length) {
+      roomList.forEach(r => p.append('roomCount[]', String(r)));
+    }
+    return p;
+  };
+
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -63,8 +78,6 @@ export default async function handler(req, res) {
 
     const baseParams = {
       cardType: 100,
-      limit: 0,
-      offset: 0,
       locations: JSON.stringify([[64, 6, 'Helsinki']])
     };
 
@@ -78,23 +91,7 @@ export default async function handler(req, res) {
       roomList = rooms.split(',').map(s => s.trim()).filter(Boolean);
   }
 
-  // Helper to build URLSearchParams with array support
-  const buildParams = (obj, extras = {}) => {
-    const p = new URLSearchParams();
-    Object.entries({ ...obj, ...extras }).forEach(([k, v]) => {
-      if (v === undefined || v === null) return;
-      if (Array.isArray(v)) v.forEach(val => p.append(k, String(val)));
-      else p.append(k, String(v));
-    });
-    // Add roomCount[]
-    if (roomList && roomList.length) {
-      roomList.forEach(r => p.append('roomCount[]', String(r)));
-    }
-    return p;
-  };
-
-
-    const totalParams = buildParams(baseParams);
+    const totalParams = buildParams({...baseParams, limit: 0, offset: 0, }, roomList);
     const totalRes = await fetch(`${API_URL}?${totalParams}`, { headers });
     const totalJson = await totalRes.json();
     const totalUnfiltered = totalJson.found || 0;
@@ -110,14 +107,16 @@ export default async function handler(req, res) {
 
       while (fetched < toFetch) {
         const limit = Math.min(BATCH_SIZE, toFetch - fetched);
-        const p = buildParams(
+        const params = buildParams(
           { ...baseParams, limit, offset: fetched, sortBy: sort },
           roomList
         );
-        const resp = await fetch(`${API_URL}?${p}`, { headers });
+        const resp = await fetch(`${API_URL}?${params}`, { headers });
         const json = await resp.json();
+        const cards = json.cards || [];
+        if (cards.length === 0) break;
 
-        const batch = (json.cards || []).map(normalizeApartment);
+        const batch = cards.map(normalizeApartment);
 
         // local €/m² filters
         let filtered = batch;
@@ -127,8 +126,9 @@ export default async function handler(req, res) {
         // Keep order as provided by Oikotie across batches
         allFiltered.push(...filtered);
 
-        fetched += limit;
-        if (!json.cards || json.cards.length < limit) break;
+        fetched += cards.length;
+        
+        if (!json.cards || cards.length < limit) break;
       }
 
       const totalFiltered = allFiltered.length;
@@ -139,11 +139,10 @@ export default async function handler(req, res) {
         total: totalFiltered, // correct total after €/m²
         page: pageNum,
         pageSize: size,
-        manualMode: true,
       });
     }
 
-  // Actual page fetch
+  // Normal mode
     const pageParams = buildParams({
       ...baseParams,
       limit: size,
@@ -154,7 +153,7 @@ export default async function handler(req, res) {
     const pageRes = await fetch(`${API_URL}?${pageParams}`, { headers });
     const pageJson = await pageRes.json();
 
-    let apartments = (pageJson.cards || []).map(normalizeApartment);
+    const apartments = (pageJson.cards || []).map(normalizeApartment);
 
 
     /* ---Old manual style---
