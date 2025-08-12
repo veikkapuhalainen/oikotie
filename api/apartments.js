@@ -1,7 +1,10 @@
-import { fetchFromOikotie } from './utils.js';
 import { getHeaders } from './utils.js';
 
 const API_URL = 'https://asunnot.oikotie.fi/api/search';
+
+// caps & batch size for manual mode
+const MAX_MANUAL_FETCH = 2000;
+const BATCH_SIZE = 200;
 
 
 function normalizeApartment(card) {
@@ -35,7 +38,7 @@ function normalizeApartment(card) {
 
 
 export default async function handler(req, res) {
-  const { method, query } = req;
+  const { method } = req;
   if (method !== 'GET') return res.status(405).end('Method Not Allowed');
 
   const {
@@ -83,7 +86,7 @@ export default async function handler(req, res) {
       if (Array.isArray(v)) v.forEach(val => p.append(k, String(val)));
       else p.append(k, String(v));
     });
-    // Add roomCount[] correctly
+    // Add roomCount[]
     if (roomList && roomList.length) {
       roomList.forEach(r => p.append('roomCount[]', String(r)));
     }
@@ -94,7 +97,51 @@ export default async function handler(req, res) {
     const totalParams = buildParams(baseParams);
     const totalRes = await fetch(`${API_URL}?${totalParams}`, { headers });
     const totalJson = await totalRes.json();
-    const total = totalJson.found || 0;
+    const totalUnfiltered = totalJson.found || 0;
+
+    
+    const needsManual = Boolean(minPricePerSqm || maxPricePerSqm);
+
+    if (needsManual) {
+      // ---- Manual mode: fetch many, filter locally, then paginate ----
+      const toFetch = Math.min(totalUnfiltered, MAX_MANUAL_FETCH);
+      let fetched = 0;
+      const allFiltered = [];
+
+      while (fetched < toFetch) {
+        const limit = Math.min(BATCH_SIZE, toFetch - fetched);
+        const p = buildParams(
+          { ...baseParams, limit, offset: fetched, sortBy: sort },
+          roomList
+        );
+        const resp = await fetch(`${API_URL}?${p}`, { headers });
+        const json = await resp.json();
+
+        const batch = (json.cards || []).map(normalizeApartment);
+
+        // local €/m² filters
+        let filtered = batch;
+        if (minPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm >= Number(minPricePerSqm));
+        if (maxPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm <= Number(maxPricePerSqm));
+
+        // Keep order as provided by Oikotie across batches
+        allFiltered.push(...filtered);
+
+        fetched += limit;
+        if (!json.cards || json.cards.length < limit) break;
+      }
+
+      const totalFiltered = allFiltered.length;
+      const apartments = allFiltered.slice(offset, offset + size);
+
+      return res.json({
+        apartments,
+        total: totalFiltered, // correct total after €/m²
+        page: pageNum,
+        pageSize: size,
+        manualMode: true,
+      });
+    }
 
   // Actual page fetch
     const pageParams = buildParams({
@@ -109,6 +156,9 @@ export default async function handler(req, res) {
 
     let apartments = (pageJson.cards || []).map(normalizeApartment);
 
+
+    /* ---Old manual style---
+
     // Local filtering (for pricePerSqm) — not supported directly by Oikotie
     if (minPricePerSqm) {
       apartments = apartments.filter(a => a.pricePerSqm >= Number(minPricePerSqm));
@@ -116,10 +166,11 @@ export default async function handler(req, res) {
     if (maxPricePerSqm) {
       apartments = apartments.filter(a => a.pricePerSqm <= Number(maxPricePerSqm));
     }
+      */
 
     res.json({
       apartments,
-      total,
+      total: totalUnfiltered,
       page: pageNum,
       pageSize: size,
     });
@@ -129,47 +180,3 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to fetch apartments' });
   }
 }
-
-
-
-/*
-Old logic:
-    let filtered = [...all];
-
-    // Apply filters like before
-    if (minPrice) filtered = filtered.filter(a => parseFloat((a.price || '').toString().replace(/[^\d.]/g, '')) >= Number(minPrice));
-    if (maxPrice) filtered = filtered.filter(a => parseFloat((a.price || '').toString().replace(/[^\d.]/g, '')) <= Number(maxPrice));
-    if (minSize) filtered = filtered.filter(a => a.size >= Number(minSize));
-    if (maxSize) filtered = filtered.filter(a => a.size <= Number(maxSize));
-    if (minPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm >= Number(minPricePerSqm));
-    if (maxPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm <= Number(maxPricePerSqm));
-    if (rooms) {
-      const selected = rooms.split(',').map(Number);
-      filtered = filtered.filter(a => selected.includes(Number(a.rooms)));
-    }
-
-    filtered.sort((a, b) => {
-      const aVal = parseFloat((a[sort] || '').toString().replace(/[^\d.]/g, '')) || 0;
-      const bVal = parseFloat((b[sort] || '').toString().replace(/[^\d.]/g, '')) || 0;
-      return order === 'asc' ? aVal - bVal : bVal - aVal;
-    });
-
-    const total = filtered.length;
-    const pageNum = Number(page);
-    const size = Number(pageSize);
-    const paged = filtered.slice((pageNum - 1) * size, pageNum * size);
-
-    res.json({
-      apartments: paged,
-      total,
-      page: pageNum,
-      pageSize: size,
-    });
-
-  } catch (err) {
-    console.error('❌ Error fetching apartments:', err);
-    res.status(500).json({ error: 'Failed to fetch apartments' });
-  }
-}
-
-*/
