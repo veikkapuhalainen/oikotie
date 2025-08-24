@@ -97,6 +97,22 @@ function App() {
     setApplied({ ...DEFAULTS });
   };
 
+  // 🔎 Haku: apply drafts → snapshot and fetch page 1
+  const handleSearch = () => {
+    setCurrentPage(1);
+    setApplied({
+      sortKey,
+      minPrice,
+      maxPrice,
+      minSize,
+      maxSize,
+      minPricePerSqm,
+      maxPricePerSqm,
+      rooms: selectedRooms,
+      conditions: selectedConditions,
+    });
+  };
+
 
   return (
     <div className="p-4 bg-blue-50 min-h-screen">
