@@ -193,7 +193,7 @@ export default async function handler(req, res) {
     const pageRes = await fetch(`${API_URL}?${pageParams}`, { headers });
     const pageJson = await pageRes.json();
     const cards = Array.isArray(pageJson.cards) ? pageJson.cards : [];
-    const apartments = cards.map(normalizeApartment);
+    let apartments = cards.map(normalizeApartment);
 
 
     // If €/m² filters are set, filter ONLY this page locally
