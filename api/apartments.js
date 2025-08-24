@@ -53,6 +53,7 @@ function normalizeApartment(card) {
   };
 
 
+  /*
 async function fetchFilteredAll({
   baseParams,
   roomList,
@@ -98,6 +99,7 @@ async function fetchFilteredAll({
   const apartments = acc.slice(offset, offset + size);
   return { apartments, total };
 }
+  */
 
 
 export default async function handler(req, res) {
@@ -153,6 +155,7 @@ export default async function handler(req, res) {
     
     const needsManual = Boolean(minPricePerSqm || maxPricePerSqm);
 
+    /*
     if (needsManual) {
       // ---- Manual €/m² mode: scan ALL results for exact total ----
       const { apartments, total } = await fetchFilteredAll({
@@ -177,6 +180,7 @@ export default async function handler(req, res) {
         manualCapped: false    // we scanned everything
       });
     }
+      */
 
   // Normal mode
     const pageParams = buildParams({
@@ -192,16 +196,17 @@ export default async function handler(req, res) {
     const apartments = cards.map(normalizeApartment);
 
 
-    /* ---Old manual style---
-
-    // Local filtering (for pricePerSqm) — not supported directly by Oikotie
-    if (minPricePerSqm) {
-      apartments = apartments.filter(a => a.pricePerSqm >= Number(minPricePerSqm));
+    // If €/m² filters are set, filter ONLY this page locally
+    if (needsManual) {
+      if (minPricePerSqm) {
+        const minPPS = Number(minPricePerSqm);
+        apartments = apartments.filter(a => a.pricePerSqm != null && a.pricePerSqm >= minPPS);
+      }
+      if (maxPricePerSqm) {
+        const maxPPS = Number(maxPricePerSqm);
+        apartments = apartments.filter(a => a.pricePerSqm != null && a.pricePerSqm <= maxPPS);
+      }
     }
-    if (maxPricePerSqm) {
-      apartments = apartments.filter(a => a.pricePerSqm <= Number(maxPricePerSqm));
-    }
-      */
 
     res.json({
       apartments,
