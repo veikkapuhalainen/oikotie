@@ -2,9 +2,8 @@ import { getHeaders } from './utils.js';
 
 const API_URL = 'https://asunnot.oikotie.fi/api/search';
 
-// caps & batch size for manual mode
-const MAX_MANUAL_FETCH = 1500;
-const BATCH_SIZE = 200;
+// Batch size for manual mode
+const BATCH_SIZE = 250;
 
 
 function normalizeApartment(card) {
@@ -54,7 +53,7 @@ function normalizeApartment(card) {
   };
 
 
-async function fetchFilteredPage({
+async function fetchFilteredAll({
   baseParams,
   roomList,
   conditionList,
@@ -63,15 +62,14 @@ async function fetchFilteredPage({
   offset,
   size,
   minPricePerSqm,
-  maxPricePerSqm
+  maxPricePerSqm,
+  totalUnfiltered,   // 👈 iterate all results
 }) {
-  const neededEnd = offset + size;
   const acc = [];
   let fetched = 0;
-  let endReached = false;
 
-  while (fetched < MAX_MANUAL_FETCH && acc.length < neededEnd) {
-    const limit = Math.min(BATCH_SIZE, MAX_MANUAL_FETCH - fetched);
+  while (fetched < totalUnfiltered) {
+    const limit = Math.min(BATCH_SIZE, totalUnfiltered - fetched);
     const params = buildParams(
       { ...baseParams, limit, offset: fetched, sortBy: sort },
       roomList,
@@ -81,12 +79,11 @@ async function fetchFilteredPage({
     const resp = await fetch(`${API_URL}?${params}`, { headers });
     const json = await resp.json();
     const cards = Array.isArray(json.cards) ? json.cards : [];
-
-    if (!cards.length) { endReached = true; break; }
+    if (!cards.length) break; // API ended early
 
     const batch = cards.map(normalizeApartment);
 
-    // €/m² local filter
+    // €/m² local filter (keep only valid values)
     let filtered = batch;
     if (minPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm != null && a.pricePerSqm >= Number(minPricePerSqm));
     if (maxPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm != null && a.pricePerSqm <= Number(maxPricePerSqm));
@@ -94,15 +91,12 @@ async function fetchFilteredPage({
     acc.push(...filtered);
 
     fetched += cards.length;
-
-    if (cards.length < limit) { endReached = true; break; }
+    if (cards.length < limit) break; // safety: API returned fewer than requested
   }
 
-  const exhausted = endReached;             // true if we reached the end of API data
-  const total = acc.length;                 // best-known filtered total (exact if exhausted)
-
+  const total = acc.length; // exact filtered total
   const apartments = acc.slice(offset, offset + size);
-  return { apartments, total, exhausted, scanned: fetched };
+  return { apartments, total };
 }
 
 
@@ -160,8 +154,8 @@ export default async function handler(req, res) {
     const needsManual = Boolean(minPricePerSqm || maxPricePerSqm);
 
     if (needsManual) {
-      // ---- Manual €/m² mode: lazy page-fill (fast & stable page sizes) ----
-      const { apartments, total, exhausted } = await fetchFilteredPage({
+      // ---- Manual €/m² mode: scan ALL results for exact total ----
+      const { apartments, total } = await fetchFilteredAll({
         baseParams,
         roomList,
         conditionList,
@@ -170,16 +164,17 @@ export default async function handler(req, res) {
         offset,
         size,
         minPricePerSqm,
-        maxPricePerSqm
+        maxPricePerSqm,
+        totalUnfiltered,
       });
 
       return res.json({
         apartments,
-        total,                 // filtered count (exact if exhausted)
+        total,                 // exact total after €/m² filtering
         page: pageNum,
         pageSize: size,
         manualMode: true,
-        manualCapped: !exhausted // true if we hit MAX_MANUAL_FETCH before API ended
+        manualCapped: false    // we scanned everything
       });
     }
 
