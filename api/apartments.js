@@ -99,7 +99,7 @@ export default async function handler(req, res) {
       conditionList = conditions.split(',').map(s => s.trim()).filter(Boolean);
     }
 
-    const totalParams = buildParams({...baseParams, limit: 0, offset: 0, }, roomList);
+    const totalParams = buildParams({...baseParams, limit: 0, offset: 0, }, roomList, conditionList);
     const totalRes = await fetch(`${API_URL}?${totalParams}`, { headers });
     const totalJson = await totalRes.json();
     const totalUnfiltered = totalJson.found || 0;
