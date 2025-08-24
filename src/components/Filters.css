@@ -57,6 +57,7 @@
 
 .reset-btn {
   background-color: #d0d3db;
+  color: black;
   border: none;
   padding: 8px 16px;
   border-radius: 20px;
@@ -67,6 +68,7 @@
 
 .search-btn {
   background-color: #3b82f6;
+  color: white;
   border: none;
   padding: 8px 16px;
   border-radius: 20px;
@@ -81,7 +83,7 @@
 }
 
 .search-btn:hover {
-  background-color: #2c5fb0;
+  background-color: rgb(31, 96, 200);
 }
 
 
