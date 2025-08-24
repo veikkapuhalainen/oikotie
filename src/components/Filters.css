@@ -33,7 +33,6 @@
   background-color: #fff;
 }
 
-
 .room-selector,
 .condition-selector {
   display: flex;
@@ -86,6 +85,11 @@
 
 .filters {
   gap: 8px;
+}
+
+p {
+  margin-top: 8px;
+  margin-bottom: 8px;
 }
 
 .sort-selector,
