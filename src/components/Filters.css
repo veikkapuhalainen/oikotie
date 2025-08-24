@@ -96,7 +96,8 @@
   min-width: 130px;
 }
 
-.room-selector {
+.room-selector,
+.condition-selector {
   gap: 6px;
 }
 
