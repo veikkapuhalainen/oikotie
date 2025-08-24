@@ -3,8 +3,8 @@ import { getHeaders } from './utils.js';
 const API_URL = 'https://asunnot.oikotie.fi/api/search';
 
 // caps & batch size for manual mode
-const MAX_MANUAL_FETCH = 2000;
-const BATCH_SIZE = 1500;
+const MAX_MANUAL_FETCH = 1500;
+const BATCH_SIZE = 200;
 
 
 function normalizeApartment(card) {
@@ -52,6 +52,58 @@ function normalizeApartment(card) {
   }
     return p;
   };
+
+
+async function fetchFilteredPage({
+  baseParams,
+  roomList,
+  conditionList,
+  sort,
+  headers,
+  offset,
+  size,
+  minPricePerSqm,
+  maxPricePerSqm
+}) {
+  const neededEnd = offset + size;
+  const acc = [];
+  let fetched = 0;
+  let endReached = false;
+
+  while (fetched < MAX_MANUAL_FETCH && acc.length < neededEnd) {
+    const limit = Math.min(BATCH_SIZE, MAX_MANUAL_FETCH - fetched);
+    const params = buildParams(
+      { ...baseParams, limit, offset: fetched, sortBy: sort },
+      roomList,
+      conditionList
+    );
+
+    const resp = await fetch(`${API_URL}?${params}`, { headers });
+    const json = await resp.json();
+    const cards = Array.isArray(json.cards) ? json.cards : [];
+
+    if (!cards.length) { endReached = true; break; }
+
+    const batch = cards.map(normalizeApartment);
+
+    // €/m² local filter
+    let filtered = batch;
+    if (minPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm != null && a.pricePerSqm >= Number(minPricePerSqm));
+    if (maxPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm != null && a.pricePerSqm <= Number(maxPricePerSqm));
+
+    acc.push(...filtered);
+
+    fetched += cards.length;
+
+    if (cards.length < limit) { endReached = true; break; }
+  }
+
+  const exhausted = endReached;             // true if we reached the end of API data
+  const total = acc.length;                 // best-known filtered total (exact if exhausted)
+
+  const apartments = acc.slice(offset, offset + size);
+  return { apartments, total, exhausted, scanned: fetched };
+}
 
 
 export default async function handler(req, res) {
@@ -108,46 +160,26 @@ export default async function handler(req, res) {
     const needsManual = Boolean(minPricePerSqm || maxPricePerSqm);
 
     if (needsManual) {
-      // ---- Manual mode: fetch many, filter locally, then paginate ----
-      const toFetch = Math.min(totalUnfiltered, MAX_MANUAL_FETCH);
-      let fetched = 0;
-      const allFiltered = [];
-
-      while (fetched < toFetch) {
-        const limit = Math.min(BATCH_SIZE, toFetch - fetched);
-        const params = buildParams(
-          { ...baseParams, limit, offset: fetched, sortBy: sort },
-          roomList,
-          conditionList
-        );
-
-        const resp = await fetch(`${API_URL}?${params}`, { headers });
-        const json = await resp.json();
-        const cards = Array.isArray(json.cards) ? json.cards : [];
-        if (cards.length === 0) break;
-
-        const batch = cards.map(normalizeApartment);
-
-        // local €/m² filters
-        let filtered = batch;
-        if (minPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm >= Number(minPricePerSqm));
-        if (maxPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm <= Number(maxPricePerSqm));
-
-        // Keep order as provided by Oikotie across batches
-        allFiltered.push(...filtered);
-
-        fetched += cards.length;
-        if (!json.cards || cards.length < limit) break;
-      }
-
-      const total = allFiltered.length;
-      const apartments = allFiltered.slice(offset, offset + size);
+      // ---- Manual €/m² mode: lazy page-fill (fast & stable page sizes) ----
+      const { apartments, total, exhausted } = await fetchFilteredPage({
+        baseParams,
+        roomList,
+        conditionList,
+        sort,
+        headers,
+        offset,
+        size,
+        minPricePerSqm,
+        maxPricePerSqm
+      });
 
       return res.json({
         apartments,
-        total, // correct total after €/m²
+        total,                 // filtered count (exact if exhausted)
         page: pageNum,
         pageSize: size,
+        manualMode: true,
+        manualCapped: !exhausted // true if we hit MAX_MANUAL_FETCH before API ended
       });
     }
 
