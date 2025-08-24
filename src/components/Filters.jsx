@@ -18,8 +18,17 @@ export default function Filters({
   setMaxPricePerSqm,
   selectedRooms,
   setSelectedRooms,
+  selectedConditions,
+  setSelectedConditions,
   handleRefresh,
 }) {
+  const CONDITION_OPTIONS = [
+    { label: 'Uusi', value: 32 },
+    { label: 'Hyvä', value: 2 },
+    { label: 'Tyydyttävä', value: 4 },
+    { label: 'Välttävä', value: 8 },
+  ];
+
   return (
     <div className="filter-container">
       <div className="filter-container-header">⚙️ Suodata & Järjestä</div>
@@ -61,6 +70,24 @@ export default function Filters({
                   )
                 }
               /> {n}
+            </label>
+          ))}
+        </div>
+
+        <div className="condition-selector">
+          <p>Kunto</p>
+          {CONDITION_OPTIONS.map(c => (
+            <label key={c.value} className="condition-item">
+              <input
+                type="checkbox"
+                checked={selectedConditions.includes(c.value)}
+                onChange={() =>
+                  setSelectedConditions(prev =>
+                    prev.includes(c.value) ? prev.filter(v => v !== c.value) : [...prev, c.value]
+                  )
+                }
+              /> {' '}
+              {c.label}
             </label>
           ))}
         </div>

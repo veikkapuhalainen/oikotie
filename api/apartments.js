@@ -47,6 +47,9 @@ function normalizeApartment(card) {
     if (roomList && roomList.length) {
       roomList.forEach(r => p.append('roomCount[]', String(r)));
     }
+    if (conditionList && conditionList.length) {
+      conditionList.forEach(c => p.append('conditionType[]', String(c)));
+  }
     return p;
   };
 
@@ -65,6 +68,7 @@ export default async function handler(req, res) {
     minPricePerSqm,
     maxPricePerSqm,
     rooms,
+    conditions,
     sort = 'published_sort_desc',
   } = req.query;
 
@@ -88,7 +92,12 @@ export default async function handler(req, res) {
     let roomList = null;
     if (rooms) {
       roomList = rooms.split(',').map(s => s.trim()).filter(Boolean);
-  }
+    }
+
+    let conditionList = null;
+    if (conditions) {
+      conditionList = conditions.split(',').map(s => s.trim()).filter(Boolean);
+    }
 
     const totalParams = buildParams({...baseParams, limit: 0, offset: 0, }, roomList);
     const totalRes = await fetch(`${API_URL}?${totalParams}`, { headers });
@@ -108,8 +117,10 @@ export default async function handler(req, res) {
         const limit = Math.min(BATCH_SIZE, toFetch - fetched);
         const params = buildParams(
           { ...baseParams, limit, offset: fetched, sortBy: sort },
-          roomList
+          roomList,
+          conditionList
         );
+
         const resp = await fetch(`${API_URL}?${params}`, { headers });
         const json = await resp.json();
         const cards = Array.isArray(json.cards) ? json.cards : [];
@@ -146,7 +157,7 @@ export default async function handler(req, res) {
       limit: size,
       offset,
       sortBy: sort
-    }, roomList);
+    }, roomList, conditionList);
 
     const pageRes = await fetch(`${API_URL}?${pageParams}`, { headers });
     const pageJson = await pageRes.json();

@@ -18,6 +18,7 @@ function App() {
   const [minPricePerSqm, setMinPricePerSqm] = useState('');
   const [maxPricePerSqm, setMaxPricePerSqm] = useState('');
   const [selectedRooms, setSelectedRooms] = useState([]);
+  const [selectedConditions, setSelectedConditions] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0); // filtered/correct total
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,8 @@ function App() {
     if (maxPricePerSqm) params.append('maxPricePerSqm', maxPricePerSqm);
 
     if (selectedRooms.length > 0) params.append('rooms', selectedRooms.join(','));
+    if (selectedConditions.length > 0) params.append('conditions', selectedConditions.join(','));
+
     params.append('sort', sortKey);
     params.append('page', currentPage);
     params.append('pageSize', PAGE_SIZE);
@@ -116,6 +119,8 @@ function App() {
         setMaxPricePerSqm={setMaxPricePerSqm}
         selectedRooms={selectedRooms}
         setSelectedRooms={setSelectedRooms}
+        selectedConditions={selectedConditions}
+        setSelectedConditions={setSelectedConditions}
         handleRefresh={handleRefresh}
       />
 

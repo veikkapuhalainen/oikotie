@@ -34,14 +34,16 @@
 }
 
 
-.room-selector {
+.room-selector,
+.condition-selector {
   display: flex;
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
 }
 
-.room-nro {
+.room-nro, 
+.condition-item {
   display: flex;
   align-items: center;
   font-size: 0.9rem;
