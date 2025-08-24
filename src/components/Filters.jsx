@@ -20,7 +20,8 @@ export default function Filters({
   setSelectedRooms,
   selectedConditions,
   setSelectedConditions,
-  handleRefresh,
+  onSearch, 
+  onClear, 
 }) {
   const CONDITION_OPTIONS = [
     { label: 'Uusi', value: 32 },
@@ -95,18 +96,8 @@ export default function Filters({
         </div>
 
         <div className="refresh-reset-container">
-          <button onClick={handleRefresh} className="refresh-btn">🔄 Lataa asunnot</button>
-          <button onClick={() => {
-            setMinPrice('');
-            setMaxPrice('');
-            setMinSize('');
-            setMaxSize('');
-            setMinPricePerSqm('');
-            setMaxPricePerSqm('');
-            setSelectedRooms([]);
-            setSelectedConditions([]);
-            setSortKey('published_sort_desc');
-          }} className="reset-btn">Nollaa suodattimet</button>
+          <button onClick={onSearch} className="search-btn">🔎 Haku</button>
+          <button onClick={onClear} className="reset-btn">🗑️ Nollaa suodattimet</button>
         </div>
       </div>
     </div>

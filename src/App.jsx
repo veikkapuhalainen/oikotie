@@ -7,6 +7,19 @@ import './App.css';
 
 const PAGE_SIZE = 50;
 
+// default filters
+const DEFAULTS = {
+  sortKey: 'published_sort_desc',
+  minPrice: '',
+  maxPrice: '',
+  minSize: '',
+  maxSize: '',
+  minPricePerSqm: '',
+  maxPricePerSqm: '',
+  rooms: [],
+  conditions: [],
+};
+
 function App() {
   const [apartments, setApartments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,73 +36,65 @@ function App() {
   const [totalResults, setTotalResults] = useState(0); // filtered/correct total
   const [loading, setLoading] = useState(false);
 
+  const [applied, setApplied] = useState({ ...DEFAULTS });
+
 
   // ✅ Backend filtering + sorting + pagination
   const fetchApartments = async () => {
+    if (!applied) return;
     setLoading(true);
     const params = new URLSearchParams();
-    if (minPrice) params.append('minPrice', minPrice);
-    if (maxPrice) params.append('maxPrice', maxPrice);
+    if (applied.minPrice) params.append('minPrice', applied.minPrice);
+    if (applied.maxPrice) params.append('maxPrice', applied.maxPrice);
 
-    if (minSize) params.append('minSize', minSize);
-    if (maxSize) params.append('maxSize', maxSize);
+    if (applied.minSize) params.append('minSize', applied.minSize);
+    if (applied.maxSize) params.append('maxSize', applied.maxSize);
 
-    if (minPricePerSqm) params.append('minPricePerSqm', minPricePerSqm);
-    if (maxPricePerSqm) params.append('maxPricePerSqm', maxPricePerSqm);
+    if (applied.minPricePerSqm) params.append('minPricePerSqm', applied.minPricePerSqm);
+    if (applied.maxPricePerSqm) params.append('maxPricePerSqm', applied.maxPricePerSqm);
 
-    if (selectedRooms.length > 0) params.append('rooms', selectedRooms.join(','));
-    if (selectedConditions.length > 0) params.append('conditions', selectedConditions.join(','));
+    if (applied.rooms?.length) params.append('rooms', applied.rooms.join(','));
+    if (applied.conditions?.length) params.append('conditions', applied.conditions.join(','));
 
-    params.append('sort', sortKey);
+    params.append('sort', applied.sortKey);
     params.append('page', currentPage);
     params.append('pageSize', PAGE_SIZE);
 
     try {
       const res = await fetch(`/api/apartments?${params.toString()}`);
       const data = await res.json();
-      setApartments(data.apartments);
-      setTotalResults(data.total);
-      setTotalPages(Math.ceil(data.total / PAGE_SIZE));
+      setApartments(data.apartments || []);
+      setTotalResults(data.total || 0);
+      setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
     } catch (err) {
       console.error('❌ Failed to fetch apartments:', err);
       setApartments([]);
       setTotalResults(0);
       setTotalPages(1);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  // ✅ Refresh data only on full reload (e.g. F5)
+  // ✅ Fetch on first load (applied is initialized) + whenever applied snapshot or page changes
   useEffect(() => {
     fetchApartments();
-    /*
-    const fetchInitial = async () => {
-      setLoading(true);
-      await fetch('/api/refresh', { method: 'POST' });
-      await fetchApartments();
-      setLoading(false);
-    };
-    fetchInitial();
-    */
+  }, [applied, currentPage]);
 
-  }, []); // Run only once when the app loads
-
-
-  useEffect(() => {
-    fetchApartments();
-  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, selectedConditions, sortKey, currentPage]);
-
-   // 👇 Reset to first page on filter/sort changes only
-  useEffect(() => {
+  // ♻️ Nollaa suodattimet: reset drafts only (no fetch until Haku)
+  const handleClearFilters = () => {
+    setSortKey(DEFAULTS.sortKey);
+    setMinPrice(DEFAULTS.minPrice);
+    setMaxPrice(DEFAULTS.maxPrice);
+    setMinSize(DEFAULTS.minSize);
+    setMaxSize(DEFAULTS.maxSize);
+    setMinPricePerSqm(DEFAULTS.minPricePerSqm);
+    setMaxPricePerSqm(DEFAULTS.maxPricePerSqm);
+    setSelectedRooms(DEFAULTS.rooms);
+    setSelectedConditions(DEFAULTS.conditions);
     setCurrentPage(1);
-  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, selectedConditions, sortKey]);
-
-  const handleRefresh = async () => {
-    setLoading(true);
-    //await fetch('/api/refresh', { method: 'POST' });
-    await fetchApartments();
-    setCurrentPage(1);
-    setLoading(false);
+    
+    setApplied({ ...DEFAULTS });
   };
 
 
@@ -121,7 +126,9 @@ function App() {
         setSelectedRooms={setSelectedRooms}
         selectedConditions={selectedConditions}
         setSelectedConditions={setSelectedConditions}
-        handleRefresh={handleRefresh}
+        
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
       />
 
       <PaginationControls
