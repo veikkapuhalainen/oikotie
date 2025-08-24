@@ -76,20 +76,22 @@ export default function Filters({
 
         <div className="condition-selector">
           <p>Kunto</p>
-          {CONDITION_OPTIONS.map(c => (
-            <label key={c.value} className="condition-item">
+          {CONDITION_OPTIONS.map(opt => (
+            <label key={opt.value} className="condition-item">
               <input
                 type="checkbox"
-                checked={selectedConditions.includes(c.value)}
+                checked={selectedConditions.includes(opt.value)}
                 onChange={() =>
                   setSelectedConditions(prev =>
-                    prev.includes(c.value) ? prev.filter(v => v !== c.value) : [...prev, c.value]
+                    prev.includes(opt.value)
+                      ? prev.filter(v => v !== opt.value)
+                      : [...prev, opt.value]
                   )
                 }
-              /> {' '}
-              {c.label}
-            </label>
-          ))}
+              />{' '}
+            {opt.label}
+          </label>
+        ))}
         </div>
 
         <div className="refresh-reset-container">
@@ -102,6 +104,7 @@ export default function Filters({
             setMinPricePerSqm('');
             setMaxPricePerSqm('');
             setSelectedRooms([]);
+            setSelectedConditions([]);
             setSortKey('published_sort_desc');
           }} className="reset-btn">Nollaa suodattimet</button>
         </div>

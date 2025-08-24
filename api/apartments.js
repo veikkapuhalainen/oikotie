@@ -37,7 +37,7 @@ function normalizeApartment(card) {
 }
 
   // Helper to build URLSearchParams with array support
-  function buildParams(obj, roomList) {
+  function buildParams(obj, roomList, conditionList) {
     const p = new URLSearchParams();
     Object.entries(obj || {}).forEach(([k, v]) => {
     if (v === undefined || v === null) return;

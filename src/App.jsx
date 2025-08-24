@@ -77,12 +77,12 @@ function App() {
 
   useEffect(() => {
     fetchApartments();
-  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, sortKey, currentPage]);
+  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, selectedConditions, sortKey, currentPage]);
 
    // 👇 Reset to first page on filter/sort changes only
   useEffect(() => {
     setCurrentPage(1);
-  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, sortKey]);
+  }, [minPrice, maxPrice, minSize, maxSize, minPricePerSqm, maxPricePerSqm, selectedRooms, selectedConditions, sortKey]);
 
   const handleRefresh = async () => {
     setLoading(true);
