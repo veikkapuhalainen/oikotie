@@ -65,7 +65,7 @@ function App() {
       const data = await res.json();
       setApartments(data.apartments || []);
       setTotalResults(data.total || 0);
-      setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
+      setTotalPages(Math.max(1, Math.ceil(data.total / PAGE_SIZE)));
     } catch (err) {
       console.error('❌ Failed to fetch apartments:', err);
       setApartments([]);
