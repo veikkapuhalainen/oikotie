@@ -23,6 +23,8 @@ export default function Filters({
   onSearch, 
   onClear, 
 }) {
+
+  // Condition values that are supprted by Oikotie
   const CONDITION_OPTIONS = [
     { label: 'Uusi', value: 32 },
     { label: 'Hyvä', value: 2 },

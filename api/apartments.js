@@ -1,16 +1,20 @@
 import { getHeaders } from './utils.js';
 
+// Oikotie api's url
 const API_URL = 'https://asunnot.oikotie.fi/api/search';
 
-// Batch size for manual mode
-const BATCH_SIZE = 250;
+// Searching apartments only from Helsinki area
+const LOCATIONS_HELSINKI = JSON.stringify([[64, 6, 'Helsinki']]);
 
 
+// Helper function for parsing the desired data from an apartment card
 function normalizeApartment(card) {
   const price = parseFloat((card.data.price || '').replace(/[^\d,.]/g, '').replace(',', '.'));
 
   let size = card.data.size.split('/')[0].trim();
   size = parseFloat(size.replace(/[^\d,.]/g, '').replace(',', '.'));
+
+  // Count the price per square meter manually
   const pricePerSqm = price && size ? Math.round(price / size) : null;
 
   return {
@@ -35,7 +39,7 @@ function normalizeApartment(card) {
   };
 }
 
-  // Helper to build URLSearchParams with array support
+  // Helper function to build URLSearchParams with array support
   function buildParams(obj, roomList, conditionList) {
     const p = new URLSearchParams();
     Object.entries(obj || {}).forEach(([k, v]) => {
@@ -53,55 +57,9 @@ function normalizeApartment(card) {
   };
 
 
-  /*
-async function fetchFilteredAll({
-  baseParams,
-  roomList,
-  conditionList,
-  sort,
-  headers,
-  offset,
-  size,
-  minPricePerSqm,
-  maxPricePerSqm,
-  totalUnfiltered,   // 👈 iterate all results
-}) {
-  const acc = [];
-  let fetched = 0;
 
-  while (fetched < totalUnfiltered) {
-    const limit = Math.min(BATCH_SIZE, totalUnfiltered - fetched);
-    const params = buildParams(
-      { ...baseParams, limit, offset: fetched, sortBy: sort },
-      roomList,
-      conditionList
-    );
-
-    const resp = await fetch(`${API_URL}?${params}`, { headers });
-    const json = await resp.json();
-    const cards = Array.isArray(json.cards) ? json.cards : [];
-    if (!cards.length) break; // API ended early
-
-    const batch = cards.map(normalizeApartment);
-
-    // €/m² local filter (keep only valid values)
-    let filtered = batch;
-    if (minPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm != null && a.pricePerSqm >= Number(minPricePerSqm));
-    if (maxPricePerSqm) filtered = filtered.filter(a => a.pricePerSqm != null && a.pricePerSqm <= Number(maxPricePerSqm));
-
-    acc.push(...filtered);
-
-    fetched += cards.length;
-    if (cards.length < limit) break; // safety: API returned fewer than requested
-  }
-
-  const total = acc.length; // exact filtered total
-  const apartments = acc.slice(offset, offset + size);
-  return { apartments, total };
-}
-  */
-
-
+// Main function that makes the request to oikotie's api and gathers the headers and params, returns the apartments for current page, the amount of
+// total apartments found, page number and size
 export default async function handler(req, res) {
   const { method } = req;
   if (method !== 'GET') return res.status(405).end('Method Not Allowed');
@@ -129,7 +87,7 @@ export default async function handler(req, res) {
 
     const baseParams = {
       cardType: 100,
-      locations: JSON.stringify([[64, 6, 'Helsinki']])
+      locations: LOCATIONS_HELSINKI
     };
 
     if (minPrice) baseParams['price[min]'] = minPrice;
@@ -147,42 +105,15 @@ export default async function handler(req, res) {
       conditionList = conditions.split(',').map(s => s.trim()).filter(Boolean);
     }
 
+    // Make a request to api with limit and offset set to 0 to get the total amount of apartments found
+    // Necessary information for pagination
     const totalParams = buildParams({...baseParams, limit: 0, offset: 0, }, roomList, conditionList);
     const totalRes = await fetch(`${API_URL}?${totalParams}`, { headers });
     const totalJson = await totalRes.json();
     const totalUnfiltered = totalJson.found || 0;
 
-    
-    const needsManual = Boolean(minPricePerSqm || maxPricePerSqm);
 
-    /*
-    if (needsManual) {
-      // ---- Manual €/m² mode: scan ALL results for exact total ----
-      const { apartments, total } = await fetchFilteredAll({
-        baseParams,
-        roomList,
-        conditionList,
-        sort,
-        headers,
-        offset,
-        size,
-        minPricePerSqm,
-        maxPricePerSqm,
-        totalUnfiltered,
-      });
-
-      return res.json({
-        apartments,
-        total,                 // exact total after €/m² filtering
-        page: pageNum,
-        pageSize: size,
-        manualMode: true,
-        manualCapped: false    // we scanned everything
-      });
-    }
-      */
-
-  // Normal mode
+  // Create the params to request [pageSize = 50] apartments for current page
     const pageParams = buildParams({
       ...baseParams,
       limit: size,
@@ -196,7 +127,9 @@ export default async function handler(req, res) {
     let apartments = cards.map(normalizeApartment);
 
 
-    // If €/m² filters are set, filter ONLY this page locally
+    // If pricePerSqm filters are set, filter ONLY this page locally
+    const needsManual = Boolean(minPricePerSqm || maxPricePerSqm);
+
     if (needsManual) {
       if (minPricePerSqm) {
         const minPPS = Number(minPricePerSqm);

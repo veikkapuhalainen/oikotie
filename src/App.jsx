@@ -7,7 +7,7 @@ import './App.css';
 
 const PAGE_SIZE = 50;
 
-// default filters
+// Default filters
 const DEFAULTS = {
   sortKey: 'published_sort_desc',
   minPrice: '',
@@ -39,11 +39,13 @@ function App() {
   const [applied, setApplied] = useState({ ...DEFAULTS });
 
 
-  // ✅ Backend filtering + sorting + pagination
+  // Call backend for filtering, sorting, pagination
   const fetchApartments = async () => {
     if (!applied) return;
     setLoading(true);
+
     const params = new URLSearchParams();
+
     if (applied.minPrice) params.append('minPrice', applied.minPrice);
     if (applied.maxPrice) params.append('maxPrice', applied.maxPrice);
 
@@ -66,22 +68,24 @@ function App() {
       setApartments(data.apartments || []);
       setTotalResults(data.total || 0);
       setTotalPages(Math.ceil(data.total / PAGE_SIZE));
+
     } catch (err) {
       console.error('❌ Failed to fetch apartments:', err);
       setApartments([]);
       setTotalResults(0);
       setTotalPages(1);
+
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Fetch on first load (applied is initialized) + whenever applied snapshot or page changes
+  // Fetch on first load (applied is initialized) and whenever applied is changed (Haku-button is clicked) or page changes
   useEffect(() => {
     fetchApartments();
   }, [applied, currentPage]);
 
-  // ♻️ Nollaa suodattimet: reset drafts only (no fetch until Haku)
+  // Reset filters and sorting to default
   const handleClearFilters = () => {
     setSortKey(DEFAULTS.sortKey);
     setMinPrice(DEFAULTS.minPrice);
@@ -97,7 +101,7 @@ function App() {
     setApplied({ ...DEFAULTS });
   };
 
-  // 🔎 Haku: apply drafts → snapshot and fetch page 1
+  // Set current filters and sorting to applied
   const handleSearch = () => {
     setCurrentPage(1);
     setApplied({
@@ -142,7 +146,6 @@ function App() {
         setSelectedRooms={setSelectedRooms}
         selectedConditions={selectedConditions}
         setSelectedConditions={setSelectedConditions}
-        
         onSearch={handleSearch}
         onClear={handleClearFilters}
       />
